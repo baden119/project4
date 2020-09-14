@@ -1,5 +1,30 @@
 {% extends "network/layout.html" %}
+{% load static %}
 
 {% block body %}
-    TODO
+<div class="container">
+  <div id="new-post-view">
+      <h3>New Post</h3>
+      <form id="new-post-form">
+          <textarea class="form-control" id="new-post-body" placeholder="Seek Aproval from the Hive Mind"></textarea>
+          <input type="submit" value="Post" class="btn btn-primary">
+      </form>
+  </div>
+
+  <div id="all-posts-view">
+    <h3>All Posts</h3>
+
+    {% for post in all_posts%}
+    <div class="post">
+      <h4>{{ post.user }}</h4>
+      <p>{{ post.body }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block script %}
+    <script src="{% static 'network/network.js' %}"></script>
 {% endblock %}

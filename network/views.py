@@ -1,14 +1,26 @@
+import json
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 
-from .models import User
+from .models import User, Post
 
 
 def index(request):
-    return render(request, "network/index.html")
+
+    all_posts = Post.objects.all()
+
+    for post in all_posts:
+        print(post.user)
+        print(post.body)
+        print(post.likes)
+
+    return render(request, "network/index.html", {
+            "all_posts": all_posts
+    })
 
 
 def login_view(request):
@@ -61,3 +73,20 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "network/register.html")
+
+@csrf_exempt
+def new_post(request):
+    # Save a new post to the database
+
+    # Saving a new post must be via POST
+    if request.method != "POST":
+        return JsonResponse({"error": "POST request required."}, status=400)
+
+    # Get post data
+    data = json.loads(request.body)
+    body = data.get("body", "")
+
+    # Save post to database
+    post = Post(user=request.user, body=body)
+    post.save()
+    return JsonResponse({"message": "Post Saved successfully."}, status=201)
