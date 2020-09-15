@@ -3,25 +3,30 @@
 
 {% block body %}
 <div class="container">
+  {% if request.user.is_authenticated %}
   <div id="new-post-view">
       <h3>New Post</h3>
-      <form id="new-post-form">
-          <textarea class="form-control" id="new-post-body" placeholder="Seek Aproval from the Hive Mind"></textarea>
-          <input type="submit" value="Post" class="btn btn-primary">
-      </form>
+      <div class="form-group">
+        <form action="{% url 'new_post' %}" method="post">
+            {% csrf_token %}
+            {{NewPostForm}}
+            <br>
+            <button type="submit" class="btn btn-success">Create Listing</button>
+        </form>
+      </div>
   </div>
+  {% endif %}
 
-  <div id="all-posts-view">
-    <h3>All Posts</h3>
+    <div id="all-posts-view">
+      <h3>All Posts</h3>
 
-    {% for post in all_posts%}
-    <div class="post">
-      <h4>{{ post.user }}</h4>
-      <p>{{ post.body }}</p>
+      {% for post in all_posts%}
+      <div class="post">
+        <h4>{{ post.user }}</h4>
+        <p>{{ post.body }}</p>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
-
 </div>
 {% endblock %}
 
