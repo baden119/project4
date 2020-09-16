@@ -1,0 +1,26 @@
+{% extends "network/layout.html" %}
+{% load static %}
+
+{% block body %}
+
+<div class="container">
+  <h1> {{ username }} <button class="btn btn-primary btn-lg">Follow</button> <h1>
+  <h4> Followers: ?? <h4>
+
+  {% for post in posts%}
+  <div class="post">
+    <a id="post_user" href="users/{{ post.user }}">{{ post.user }}</a>
+    <!-- <p id="post_user">{{ post.user }}</p> -->
+    <p id="post_body">{{ post.body }}</p>
+    <p id="post_timestamp">{{ post.timestamp}}</p>
+    <p id="post_likes">&#128151; {{ post.likes }} </p>
+  </div>
+  {% endfor %}
+</div>
+
+
+{% endblock %}
+
+{% block script %}
+    <script src="{% static 'network/network.js' %}"></script>
+{% endblock %}

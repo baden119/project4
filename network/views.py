@@ -8,11 +8,11 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import User, Post
+from .models import User, Post, Follow
 
 class NewPostForm(forms.Form):
     # Form to create a new post
-    New_Post_Textfield = forms.CharField(label="", widget=forms.Textarea(attrs={'placeholder': 'New Post:', 'class': 'form-control'}))
+    New_Post_Textfield = forms.CharField(label="", widget=forms.Textarea(attrs={'placeholder': 'Write something here', 'class': 'form-control'}))
 
 def index(request):
 
@@ -89,3 +89,23 @@ def new_post(request):
     new_post.save()
 
     return redirect('index')
+
+def profile(request, username):
+    # displays a users profile
+    profile = User.objects.get(username=username)
+    posts = profile.posts.all().order_by('-timestamp')
+
+    return render(request, "network/profile.html", {
+            "username": username,
+            "posts": posts
+            })
+
+def follow(request, username):
+    # Add item to watchlist.
+    new_follow = Follow()
+    new_follow.follower = request.user
+    new_follow.followed_by = User.objects.get(username=username)
+
+    new_follow.save()
+
+    return redirect(request.META["HTTP_REFERER"])
