@@ -4,13 +4,21 @@
 {% block body %}
 
 <div class="container">
-  <h1> {{ username }} <button class="btn btn-primary btn-lg">Follow</button> <h1>
-  <h4> Followers: ?? <h4>
+  <h1>{{ username }}
+  {% if username != request.user.username %}
+    {% if following is False %}
+      <a class="btn btn-primary btn-lg" href="{% url 'follow' username %}">Follow</a>
+    {% else %}
+      <a class="btn btn-warning btn-lg" href="{% url 'unfollow' username %}">Un-Follow</a>
+    {% endif %}
+  {% endif %}
 
+  <h4> Followers: {{ followers }} </h4>
+  <h4> Follows: {{ follows }} </h4>
   {% for post in posts%}
   <div class="post">
-    <a id="post_user" href="users/{{ post.user }}">{{ post.user }}</a>
-    <!-- <p id="post_user">{{ post.user }}</p> -->
+    <!-- <a id="post_user" href="{{ post.user }}">{{ post.user }}</a> -->
+    <p id="post_user">{{ post.user }}</p>
     <p id="post_body">{{ post.body }}</p>
     <p id="post_timestamp">{{ post.timestamp}}</p>
     <p id="post_likes">&#128151; {{ post.likes }} </p>

@@ -23,11 +23,12 @@ class Post(models.Model):
 
 class Follow(models.Model):
 
-    follower = models.ForeignKey("User", on_delete=models.CASCADE, related_name="follower")
-    following = models.ForeignKey("User", on_delete=models.CASCADE, related_name="following")
+    follower = models.ForeignKey("User", on_delete=models.CASCADE, related_name="follows")
+    followed = models.ForeignKey("User", on_delete=models.CASCADE, related_name="followers")
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f" {self.follower} - {self.following}"
+        return f" {self.follower} - {self.followed} | {self.timestamp}"
 
     class Meta:
-        unique_together = ("follower", "following")
+        unique_together = ("follower", "followed")

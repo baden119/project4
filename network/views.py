@@ -15,7 +15,14 @@ class NewPostForm(forms.Form):
     New_Post_Textfield = forms.CharField(label="", widget=forms.Textarea(attrs={'placeholder': 'Write something here', 'class': 'form-control'}))
 
 def index(request):
-
+    if request.user.is_authenticated:
+        print(request.user.username)
+        print("following:")
+        for follow in request.user.follows.all():
+            print(follow.followed)
+        print("followers:")
+        for follow in request.user.followers.all():
+            print(follow.follower)
     all_posts = Post.objects.all().order_by('-timestamp')
 
     return render(request, "network/index.html", {
@@ -85,7 +92,6 @@ def new_post(request):
     new_post = Post()
     new_post.user = request.user
     new_post.body = body
-    new_post.timestamp = datetime.datetime.now()
     new_post.save()
 
     return redirect('index')
@@ -95,17 +101,42 @@ def profile(request, username):
     profile = User.objects.get(username=username)
     posts = profile.posts.all().order_by('-timestamp')
 
+    # Determine if user is currently following the owner of the profile
+    following = False
+    if request.user.is_authenticated:
+        for follow in request.user.follows.all():
+            if follow.followed.username == username:
+                following = True
+
+    follows = len(profile.follows.all())
+    followers = len(profile.followers.all())
+
     return render(request, "network/profile.html", {
             "username": username,
-            "posts": posts
+            "posts": posts,
+            "following": following,
+            "follows": follows,
+            "followers": followers
             })
 
 def follow(request, username):
-    # Add item to watchlist.
+    # Create new follow.
     new_follow = Follow()
     new_follow.follower = request.user
-    new_follow.followed_by = User.objects.get(username=username)
-
+    new_follow.followed = User.objects.get(username=username)
     new_follow.save()
-
     return redirect(request.META["HTTP_REFERER"])
+
+def unfollow(request, username):
+    # Delete a follow.
+    request.user.follows.get(followed = User.objects.get(username=username)).delete()
+    return redirect(request.META["HTTP_REFERER"])
+
+def following(request):
+    # Display posts of followed users
+    print(request.user.follows.all())
+
+    posts = Post.objects.all()
+
+    print(len(posts))
+    return render(request, "network/following.html")
