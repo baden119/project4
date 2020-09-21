@@ -2,6 +2,7 @@ import datetime
 import json
 from django import forms
 from django.contrib.auth import authenticate, login, logout
+from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render
@@ -15,15 +16,12 @@ class NewPostForm(forms.Form):
     New_Post_Textfield = forms.CharField(label="", widget=forms.Textarea(attrs={'placeholder': 'Write something here', 'class': 'form-control'}))
 
 def index(request):
-    if request.user.is_authenticated:
-        print(request.user.username)
-        print("following:")
-        for follow in request.user.follows.all():
-            print(follow.followed)
-        print("followers:")
-        for follow in request.user.followers.all():
-            print(follow.follower)
+
     all_posts = Post.objects.all().order_by('-timestamp')
+
+    p = Paginator(all_posts, 2)
+
+    print(p.count)
 
     return render(request, "network/index.html", {
             "all_posts": all_posts,
@@ -134,9 +132,19 @@ def unfollow(request, username):
 
 def following(request):
     # Display posts of followed users
-    print(request.user.follows.all())
 
-    posts = Post.objects.all()
+    # Functoion to help with sorting posts, taken from:
+    # https://www.programiz.com/python-programming/methods/list/sort
+    def get_timestamp(post):
+        return(post.timestamp)
 
-    print(len(posts))
-    return render(request, "network/following.html")
+    posts = []
+    for user in request.user.follows.all():
+        for post in Post.objects.filter(user=user.followed):
+            posts.append(post)
+
+    posts.sort(key=get_timestamp, reverse=True)
+
+    return render(request, "network/following.html", {
+        "posts": posts
+    })
