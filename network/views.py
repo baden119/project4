@@ -2,7 +2,7 @@ import datetime
 import json
 from django import forms
 from django.contrib.auth import authenticate, login, logout
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render
@@ -17,14 +17,26 @@ class NewPostForm(forms.Form):
 
 def index(request):
 
-    all_posts = Post.objects.all().order_by('-timestamp')
+    # all_posts = Post.objects.all().order_by('-timestamp')
 
-    p = Paginator(all_posts, 2)
+    paginated = Paginator(Post.objects.all().order_by('-timestamp'), 10)
 
-    print(p.count)
+    # pagination syntax taken from:
+    # https://codeloop.org/django-pagination-complete-example/
+    page = request.GET.get('page')
+    try:
+        posts = paginated.page(page)
+    except PageNotAnInteger:
+        print("pagination exeption 1")
+        posts = paginated.page(1)
+    except EmptyPage:
+        print("pagination exemption 2")
+        posts = paginated.page(paginated.num_pages)
+
 
     return render(request, "network/index.html", {
-            "all_posts": all_posts,
+            "posts": posts,
+            "page": page,
             "NewPostForm": NewPostForm()
             })
 
@@ -97,7 +109,8 @@ def new_post(request):
 def profile(request, username):
     # displays a users profile
     profile = User.objects.get(username=username)
-    posts = profile.posts.all().order_by('-timestamp')
+    paginated = Paginator(profile.posts.all().order_by('-timestamp'), 10)
+    # posts = profile.posts.all().order_by('-timestamp')
 
     # Determine if user is currently following the owner of the profile
     following = False
@@ -109,8 +122,22 @@ def profile(request, username):
     follows = len(profile.follows.all())
     followers = len(profile.followers.all())
 
+
+    # pagination syntax taken from:
+    # https://codeloop.org/django-pagination-complete-example/
+    page = request.GET.get('page')
+    try:
+        posts = paginated.page(page)
+    except PageNotAnInteger:
+        print("pagination exeption 1")
+        posts = paginated.page(1)
+    except EmptyPage:
+        print("pagination exemption 2")
+        posts = paginated.page(paginated.num_pages)
+
     return render(request, "network/profile.html", {
             "username": username,
+            "page": page,
             "posts": posts,
             "following": following,
             "follows": follows,
@@ -144,7 +171,21 @@ def following(request):
             posts.append(post)
 
     posts.sort(key=get_timestamp, reverse=True)
+    paginated = Paginator(posts, 10)
+
+    # pagination syntax taken from:
+    # https://codeloop.org/django-pagination-complete-example/
+    page = request.GET.get('page')
+    try:
+        posts = paginated.page(page)
+    except PageNotAnInteger:
+        print("pagination exeption 1")
+        posts = paginated.page(1)
+    except EmptyPage:
+        print("pagination exemption 2")
+        posts = paginated.page(paginated.num_pages)
 
     return render(request, "network/following.html", {
+        "page": page,
         "posts": posts
     })

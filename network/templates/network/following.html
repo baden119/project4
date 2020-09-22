@@ -14,6 +14,7 @@
     <p id="post_likes">&#128151; {{ post.likes }} </p>
   </div>
   {% endfor %}
+  {%	include	"network/pagination.html"	with	page=posts	%}
 </div>
 
 
