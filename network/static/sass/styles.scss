@@ -37,8 +37,8 @@ html, body{
     font-size: 25px;
   }
 
-  #edit_box{
-
+  .edit_form{
+    textarea{
       width: 97%;
       height: 200px;
       letter-spacing: 0.8px;
@@ -51,6 +51,7 @@ html, body{
       margin: 10px;
       white-space: pre-line;
       white-space: pre-wrap;
+    }
   }
 }
 

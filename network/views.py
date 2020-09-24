@@ -98,7 +98,6 @@ def new_post(request):
         body = new_post_form.cleaned_data["New_Post_Textfield"]
 
     # Save post to database
-
     new_post = Post()
     new_post.user = request.user
     new_post.body = body
@@ -189,3 +188,17 @@ def following(request):
         "page": page,
         "posts": posts
     })
+
+def edit_post(request):
+    # Composing a new email must be via POST
+    if request.method != "POST":
+        return JsonResponse({"error": "POST request required."}, status=400)
+
+    data = json.loads(request.body)
+    post_body = data["post_body"]
+    post_id = data["post_id"]
+    print(post_body)
+    print(post_id)
+
+
+    return JsonResponse({"message": "Email sent successfully."}, status=201)
