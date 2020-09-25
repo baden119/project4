@@ -24,7 +24,7 @@
       <div class="post">
         <a class="post_user" href="users/{{ post.user }}">{{ post.user }}</a>
         {% if request.user == post.user %}
-          <button id="edit_post" name="{{ post.id }}" class="btn btn-primary btn-sm">Edit</button>
+          <button class="edit_post_button" id="edit_post" name="{{ post.id }}">Edit</button>
         {% endif %}
         <p class="post_body" id="post_body_{{ post.id }}">{{ post.body }}</p>
         {% if request.user == post.user %}

@@ -1,60 +1,61 @@
+// When page is done loading
 document.addEventListener('DOMContentLoaded', function() {
 
-  document.querySelectorAll(".edit_view").forEach(edit_view => {
-                    edit_view.style.display = 'none';
-                });
+  // Hide all edit boxes
+  document.querySelectorAll(".edit_view").forEach(edit_view => {edit_view.style.display = 'none'});
 
-  document.querySelector('#edit_post').onclick = function() {
+  // When an 'Edit Post' button gets clicked
+  console.log("function start")
 
-    document.querySelector('#edit_post').disabled = true;
+  let edit_buttons = document.getElementsByClassName("edit_post_button");
 
-    document.querySelector(`#post_body_${this.name}`).style.display = 'none';
-    document.querySelector(`#edit_view_${this.name}`).style.display = 'block';
+  for (var i = 0; i < edit_buttons.length; i++) {
+     edit_buttons.item(i).onclick = function(){
 
-    edit_form_nodes = document.querySelector(`#edit_form_${this.name}`).childNodes;
+    // Implement a cancel button which is hidden on load but which apears when edit
+    // gets clicked, this button will just undo the display changes and maybe change
+    // the value of the edit form to nothing. I'd also like another for loop disabling
+    // all other edit buttons once one has been clicked, but this will probably require
+    // another for loop re-enableing them all once form is submitted or edit is cancelled.
 
-    edit_form_nodes[3].innerHTML = document.querySelector(`#post_body_${this.name}`).innerHTML;
+     // // Disable edit button, hide selected post and show selected edit box
+     // document.querySelector('#edit_post').disabled = true;
+     document.querySelector(`#post_body_${this.name}`).style.display = 'none';
+     document.querySelector(`#edit_view_${this.name}`).style.display = 'block';
 
-    document.querySelector(`#edit_form_${this.name}`).onsubmit = () => {
-      console.log("submit clicked!!")
-      edit_form_nodes = document.querySelector(`#edit_form_${this.name}`).childNodes;
+     // Populate edit box with text of selected post
+     edit_form_nodes = document.querySelector(`#edit_form_${this.name}`).childNodes;
+     edit_form_nodes[3].innerHTML = document.querySelector(`#post_body_${this.name}`).innerHTML;
 
-      const csrftoken = edit_form_nodes[1].value;
+     // When an edited post is submitted
+     document.querySelector(`#edit_form_${this.name}`).onsubmit = () => {
+       console.log("submit clicked!!")
+       edit_form_nodes = document.querySelector(`#edit_form_${this.name}`).childNodes;
 
-      fetch('/edit_post', {
-        headers: {'X-CSRFToken': csrftoken},
-        method: 'POST',
-        body: JSON.stringify({
-          mode: 'same-origin',
-          post_body: edit_form_nodes[3].value,
-          post_id: this.name
-          }) // body
-      }) //fetch request
-      .then(response => response.json())
-      .then(result => {
-        console.log(result);
-      }) //result
-      return false;
-  }; //edit_form.onsubmit
+       // Accessing csrf token
+       const csrftoken = edit_form_nodes[1].value;
 
-  // function getCookie(name) {
-  //     let cookieValue = null;
-  //     if (document.cookie && document.cookie !== '') {
-  //         const cookies = document.cookie.split(';');
-  //         for (let i = 0; i < cookies.length; i++) {
-  //             const cookie = cookies[i].trim();
-  //             // Does this cookie string begin with the name we want?
-  //             if (cookie.substring(0, name.length + 1) === (name + '=')) {
-  //                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-  //                 break;
-  //             }
-  //         }
-  //     }
-  //     console.log("cookie function about to return")
-  //     console.log(cookieValue)
-  //     return cookieValue;
-  // } // getcookie function
+       // Fetch request to server
+       fetch('/edit_post', {
+         headers: {'X-CSRFToken': csrftoken},
+         method: 'POST',
+         body: JSON.stringify({
+           mode: 'same-origin',
+           post_body: edit_form_nodes[3].value,
+           post_id: this.name
+         }) // body array
+       }) //fetch request
 
-}; // edit_post.onclick
+       // Dealing with response from server
+       .then(response => response.json())
+       .then(result => {
+         console.log(result);
+       })
 
+       // Disabling standard submission behaviour
+       return false;
+     };// edit post form onsubmit
+   }; //edit button onclick function
+ }; //edit button for loop
+  console.log("function end");
 }); //DOMContentLoaded
