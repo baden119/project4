@@ -21,28 +21,7 @@
       <h3>All Posts</h3>
 
       {% for post in posts%}
-      <div class="post">
-        <a class="post_user" href="users/{{ post.user }}">{{ post.user }}</a>
-        {% if request.user == post.user %}
-          <button class="edit_post_button" id="edit_post" name="{{ post.id }}">Edit</button>
-        {% endif %}
-        <p class="post_body" id="post_body_{{ post.id }}">{{ post.body }}</p>
-        {% if request.user == post.user %}
-        <div class="edit_view" id="edit_view_{{ post.id }}">
-          <div class="form-group">
-            <form class="edit_form" id ="edit_form_{{ post.id }}">
-              {% csrf_token %}
-              {{NewPostForm}}
-              <br>
-              <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
-            </form>
-          </div>
-        </div>
-        {% endif %}
-        <p class="post_timestamp">{{ post.timestamp}}</p>
-        <p class="post_likes">&#128151; {{ post.likes }} </p>
-      </div>
-
+        {% include 'network/partials/_post.html' %}
       {% endfor %}
 
       {%	include	"network/pagination.html"	with	page=posts	%}

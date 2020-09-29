@@ -9,7 +9,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import User, Post, Follow
+from .models import User, Post, Follow, Like
 
 class NewPostForm(forms.Form):
     # Form to create a new post
@@ -27,10 +27,8 @@ def index(request):
     try:
         posts = paginated.page(page)
     except PageNotAnInteger:
-        print("pagination exeption 1")
         posts = paginated.page(1)
     except EmptyPage:
-        print("pagination exemption 2")
         posts = paginated.page(paginated.num_pages)
 
 
@@ -128,10 +126,8 @@ def profile(request, username):
     try:
         posts = paginated.page(page)
     except PageNotAnInteger:
-        print("pagination exeption 1")
         posts = paginated.page(1)
     except EmptyPage:
-        print("pagination exemption 2")
         posts = paginated.page(paginated.num_pages)
 
     return render(request, "network/profile.html", {
@@ -140,7 +136,8 @@ def profile(request, username):
             "posts": posts,
             "following": following,
             "follows": follows,
-            "followers": followers
+            "followers": followers,
+            "NewPostForm": NewPostForm()
             })
 
 def follow(request, username):
@@ -178,13 +175,12 @@ def following(request):
     try:
         posts = paginated.page(page)
     except PageNotAnInteger:
-        print("pagination exeption 1")
         posts = paginated.page(1)
     except EmptyPage:
-        print("pagination exemption 2")
         posts = paginated.page(paginated.num_pages)
 
     return render(request, "network/following.html", {
+        "following": len(request.user.follows.all()),
         "page": page,
         "posts": posts
     })
@@ -200,5 +196,29 @@ def edit_post(request):
     print(post_body)
     print(post_id)
 
+    post = Post.objects.get(pk=post_id)
+    post.body = post_body
+    post.save()
 
-    return JsonResponse({"message": "Email sent successfully."}, status=201)
+    return JsonResponse({"message": "Email sent successfully.", "post_body": post_body}, status=201)
+
+def like_post(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST request required."}, status=400)
+
+    data = json.loads(request.body)
+    post_id = data["post_id"]
+
+    new_like = Like()
+    new_like.post = Post.objects.get(pk=post_id)
+    new_like.user = request.user
+
+    try:
+        new_like.save()
+    except IntegrityError:
+        print("CCCCCAAAANNNNTTTT DOIT!")
+
+    # either leverage this integrety error to support like/unlike toggle functionality or else think
+    # of some other way of doing it. check user.likes and post.likes functionality keep up the pressure.
+    
+    return JsonResponse({"message": "Post Liked."}, status=201)

@@ -8,7 +8,6 @@ class Post(models.Model):
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="posts")
     body = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    likes = models.IntegerField(default=0)
 
     # This function is based off a similar one proveided with project 3
     # It is necessary if using JS to fetch posts for display
@@ -32,3 +31,14 @@ class Follow(models.Model):
 
     class Meta:
         unique_together = ("follower", "followed")
+
+class Like(models.Model):
+
+    post = models.ForeignKey("Post", on_delete=models.CASCADE, related_name="likes")
+    user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="likes")
+
+    def __str__(self):
+        return f" {self.user} - {self.post}"
+
+    class Meta:
+        unique_together = ("user", "post")

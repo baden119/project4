@@ -4,15 +4,10 @@
 {% block body %}
 
 <div class="container">
-<h1> Posts by people what you is following </h1>
+<h3> Users You're Following ({{ following }} Total) </h3>
 
   {% for post in posts%}
-  <div class="post">
-    <a id="post_user" href="users/{{ post.user }}">{{ post.user }}</a>
-    <p id="post_body">{{ post.body }}</p>
-    <p id="post_timestamp">{{ post.timestamp}}</p>
-    <p id="post_likes">&#128151; {{ post.likes }} </p>
-  </div>
+    {% include 'network/partials/_post.html' %}
   {% endfor %}
   {%	include	"network/pagination.html"	with	page=posts	%}
 </div>
