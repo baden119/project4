@@ -8,6 +8,8 @@ class Post(models.Model):
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="posts")
     body = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    total_likes = models.IntegerField(default=0)
+    is_liked_by_current_user = models.BooleanField(default=False)
 
     # This function is based off a similar one proveided with project 3
     # It is necessary if using JS to fetch posts for display

@@ -21,8 +21,12 @@
   {% endif %}
   <p class="post_timestamp">{{ post.timestamp}}</p>
   {% if request.user.is_authenticated %}
-    <button class="like_post_button btn btn-light btn-lg" name="{{ post.id }}"> &#128151; TODO </button>
+    {% if post.is_liked_by_current_user == True %}
+      <button class="unlike_post_button btn btn-light btn-lg" name="{{ post.id }}"> &#128420; UNLIKE - # of Likes </button>
+    {% else %}
+      <button class="like_post_button btn btn-light btn-lg" name="{{ post.id }}"> &#128151; LIKE - # of Likes </button>
+    {% endif %}
   {% else %}
-    <p> &#128151; TODO </p>
+    <p> &#128151; # of Likes - Login to Like a post </p>
   {% endif %}
 </div>

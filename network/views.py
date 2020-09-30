@@ -17,9 +17,20 @@ class NewPostForm(forms.Form):
 
 def index(request):
 
-    # all_posts = Post.objects.all().order_by('-timestamp')
+    all_posts = Post.objects.all().order_by('-timestamp')
 
-    paginated = Paginator(Post.objects.all().order_by('-timestamp'), 10)
+    if request.user.is_authenticated:
+        liked_posts = []
+
+        for post in request.user.likes.all():
+            liked_posts.append(post.post_id)
+
+        for post in all_posts:
+            if post.id in liked_posts:
+                post.is_liked_by_current_user = True
+            # post.total_likes = total likes of post which you somehow get from database (len)
+
+    paginated = Paginator(all_posts, 10)
 
     # pagination syntax taken from:
     # https://codeloop.org/django-pagination-complete-example/
@@ -214,11 +225,12 @@ def like_post(request):
     new_like.user = request.user
 
     try:
+        # print("NEW LIKE SAVE DISABLED!")
         new_like.save()
     except IntegrityError:
         print("CCCCCAAAANNNNTTTT DOIT!")
 
     # either leverage this integrety error to support like/unlike toggle functionality or else think
     # of some other way of doing it. check user.likes and post.likes functionality keep up the pressure.
-    
+
     return JsonResponse({"message": "Post Liked."}, status=201)
