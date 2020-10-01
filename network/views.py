@@ -16,19 +16,18 @@ class NewPostForm(forms.Form):
     New_Post_Textfield = forms.CharField(label="", widget=forms.Textarea(attrs={'placeholder': 'Write something here', 'class': 'form-control'}))
 
 def index(request):
-
+    # Displays all posts
     all_posts = Post.objects.all().order_by('-timestamp')
 
-    if request.user.is_authenticated:
-        liked_posts = []
-
-        for post in request.user.likes.all():
-            liked_posts.append(post.post_id)
-
-        for post in all_posts:
-            if post.id in liked_posts:
-                post.is_liked_by_current_user = True
-            # post.total_likes = total likes of post which you somehow get from database (len)
+     # Each Post contains two fields, 'is_liked_by_current_user' and 'total_likes' which are intended to be modified
+     # dynamically with the following statements. This information is passed to the HTML template and necessary for
+     # the Like/Unlike functionality.
+    for post in all_posts:
+        post.total_likes = (len(post.likes.all()))
+        if request.user.is_authenticated:
+            for liked_post in request.user.likes.all():
+                if post.id == liked_post.post_id:
+                    post.is_liked_by_current_user = True
 
     paginated = Paginator(all_posts, 10)
 
@@ -42,6 +41,7 @@ def index(request):
     except EmptyPage:
         posts = paginated.page(paginated.num_pages)
 
+    print_hello("network/index.html")
 
     return render(request, "network/index.html", {
             "posts": posts,
@@ -102,7 +102,6 @@ def new_post(request):
     # Save a new post to the database
     # Validate form data.
     new_post_form = NewPostForm(request.POST)
-    print(new_post_form)
     if new_post_form.is_valid():
         body = new_post_form.cleaned_data["New_Post_Textfield"]
 
@@ -111,6 +110,12 @@ def new_post(request):
     new_post.user = request.user
     new_post.body = body
     new_post.save()
+
+    # Automatically Like your own post
+    new_like = Like()
+    new_like.post = Post.objects.get(pk=new_post.pk)
+    new_like.user = request.user
+    new_like.save()
 
     return redirect('index')
 
@@ -141,6 +146,7 @@ def profile(request, username):
     except EmptyPage:
         posts = paginated.page(paginated.num_pages)
 
+    print_hello("network/profile.html")
     return render(request, "network/profile.html", {
             "username": username,
             "page": page,
@@ -190,6 +196,8 @@ def following(request):
     except EmptyPage:
         posts = paginated.page(paginated.num_pages)
 
+    print_hello("network/following.html")
+
     return render(request, "network/following.html", {
         "following": len(request.user.follows.all()),
         "page": page,
@@ -204,8 +212,6 @@ def edit_post(request):
     data = json.loads(request.body)
     post_body = data["post_body"]
     post_id = data["post_id"]
-    print(post_body)
-    print(post_id)
 
     post = Post.objects.get(pk=post_id)
     post.body = post_body
@@ -220,17 +226,32 @@ def like_post(request):
     data = json.loads(request.body)
     post_id = data["post_id"]
 
-    new_like = Like()
-    new_like.post = Post.objects.get(pk=post_id)
-    new_like.user = request.user
+    # "exists()" technique sourced from:
+    # https://stackoverflow.com/questions/40910149/django-exists-versus-doesnotexist
 
-    try:
-        # print("NEW LIKE SAVE DISABLED!")
+    like_query = Like.objects.filter(post=Post.objects.get(pk=post_id), user=request.user)
+
+    if like_query.exists():
+        # Delete LIKE
+        request.user.likes.get(post = Post.objects.get(pk=post_id)).delete()
+        like_condition = False
+        message = "Post Un-Liked"
+
+    else:
+        # Create Like
+        new_like = Like()
+        new_like.post = Post.objects.get(pk=post_id)
+        new_like.user = request.user
         new_like.save()
-    except IntegrityError:
-        print("CCCCCAAAANNNNTTTT DOIT!")
+        like_condition = True
+        message = "Post Liked"
 
-    # either leverage this integrety error to support like/unlike toggle functionality or else think
-    # of some other way of doing it. check user.likes and post.likes functionality keep up the pressure.
+    like_count = len(Post.objects.get(pk=post_id).likes.all())
+    return JsonResponse({"message": message, "like_condition": like_condition, "like_count": like_count}, status=201)
 
-    return JsonResponse({"message": "Post Liked."}, status=201)
+def print_hello(route):
+
+    print("hello!")
+    print(route)
+
+    return

@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
      Object.values(document.getElementsByClassName("cancel_button")).forEach(button => {
        button.onclick = function(){
          // Reset the text in the Edit textfield
-         edit_form_nodes = document.querySelector(`#edit_form_${this.name}`).childNodes[3].value = saved_text.innerText;
+         document.querySelector(`#edit_form_${this.name}`).childNodes[3].value = saved_text.innerText;
          // Hide Edit textfield and display regular Post view
          document.querySelector(`#post_body_${this.name}`).style.display = 'block';
          document.querySelector(`#edit_view_${this.name}`).style.display = 'none';
@@ -79,14 +79,25 @@ document.addEventListener('DOMContentLoaded', function() {
         headers: {'X-CSRFToken': document.getElementsByName("csrfmiddlewaretoken")[0].value},
         body: JSON.stringify({
           post_id: this.name
-        }) // body array
+        }) // body arraylike_count.innerHTML
       }) //fetch request
 
       // Dealing with response from server
       .then(response => response.json())
       .then(result => {
         console.log(result);
-      })
+
+        // Update Post's like count with data from server
+        document.querySelector(`#like_count_${this.name}`).innerHTML = result.like_count;
+
+        // Toggle button between 'Like' and 'Liked'
+        if (result.like_condition === true){
+          document.querySelector(`#like_button_${this.name}`).innerHTML = " &#128151; Liked &#128151; ";
+        }
+        if (result.like_condition === false){
+          document.querySelector(`#like_button_${this.name}`).innerHTML = " &#9825; Like &#9825; ";
+        }
+      }) //.then(result) arrow function
 
    }; // like button onclick function
  }); //arrow function for like button

@@ -19,14 +19,15 @@
     </div>
   </div>
   {% endif %}
-  <p class="post_timestamp">{{ post.timestamp}}</p>
+  <p class="post_timestamp">{{ post.timestamp}} </p>
+  <p> Likes: &#128151; <span id="like_count_{{ post.id }}"> {{ post.total_likes }} </span> &#128151; </p>
   {% if request.user.is_authenticated %}
     {% if post.is_liked_by_current_user == True %}
-      <button class="unlike_post_button btn btn-light btn-lg" name="{{ post.id }}"> &#128420; UNLIKE - # of Likes </button>
+      <button class="like_post_button btn btn-light btn-lg" id="like_button_{{ post.id }}" name="{{ post.id }}"> &#128151; Liked &#128151; </button>
     {% else %}
-      <button class="like_post_button btn btn-light btn-lg" name="{{ post.id }}"> &#128151; LIKE - # of Likes </button>
+      <button class="like_post_button btn btn-light btn-lg" id="like_button_{{ post.id }}" name="{{ post.id }}"> &#9825; Like &#9825;</button>
     {% endif %}
   {% else %}
-    <p> &#128151; # of Likes - Login to Like a post </p>
+    <p> &#9825; - Login to Like a post </p>
   {% endif %}
 </div>
