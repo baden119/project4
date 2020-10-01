@@ -15,24 +15,35 @@ class NewPostForm(forms.Form):
     # Form to create a new post
     New_Post_Textfield = forms.CharField(label="", widget=forms.Textarea(attrs={'placeholder': 'Write something here', 'class': 'form-control'}))
 
-def index(request):
-    # Displays all posts
-    all_posts = Post.objects.all().order_by('-timestamp')
+def like_data_loader(request, posts):
 
      # Each Post contains two fields, 'is_liked_by_current_user' and 'total_likes' which are intended to be modified
      # dynamically with the following statements. This information is passed to the HTML template and necessary for
      # the Like/Unlike functionality.
-    for post in all_posts:
+    for post in posts:
         post.total_likes = (len(post.likes.all()))
         if request.user.is_authenticated:
             for liked_post in request.user.likes.all():
                 if post.id == liked_post.post_id:
                     post.is_liked_by_current_user = True
 
-    paginated = Paginator(all_posts, 10)
+    return posts
+
+def get_timestamp(post):
+    # Function to help with sorting a list of posts from multiple database queries, sourced from:
+    # https://www.programiz.com/python-programming/methods/list/sort
+    return(post.timestamp)
+
+def index(request):
+    # Displays all posts
+    posts = Post.objects.all().order_by('-timestamp')
+
+    # Each post needs additional 'like' data loaded into it dynamically using the like_data_loader function.
+    like_data_loader(request, posts)
 
     # pagination syntax taken from:
     # https://codeloop.org/django-pagination-complete-example/
+    paginated = Paginator(posts, 10)
     page = request.GET.get('page')
     try:
         posts = paginated.page(page)
@@ -40,8 +51,6 @@ def index(request):
         posts = paginated.page(1)
     except EmptyPage:
         posts = paginated.page(paginated.num_pages)
-
-    print_hello("network/index.html")
 
     return render(request, "network/index.html", {
             "posts": posts,
@@ -100,6 +109,7 @@ def register(request):
 
 def new_post(request):
     # Save a new post to the database
+
     # Validate form data.
     new_post_form = NewPostForm(request.POST)
     if new_post_form.is_valid():
@@ -120,24 +130,27 @@ def new_post(request):
     return redirect('index')
 
 def profile(request, username):
-    # displays a users profile
+    # View a users profile
     profile = User.objects.get(username=username)
-    paginated = Paginator(profile.posts.all().order_by('-timestamp'), 10)
-    # posts = profile.posts.all().order_by('-timestamp')
+    posts = profile.posts.all().order_by('-timestamp')
 
-    # Determine if user is currently following the owner of the profile
+    # Each post needs additional 'like' data loaded into it dynamically using the like_data_loader function.
+    like_data_loader(request, posts)
+
+    # Determine if current user is following of the profile being viewed
     following = False
     if request.user.is_authenticated:
         for follow in request.user.follows.all():
             if follow.followed.username == username:
                 following = True
 
+    # For the profile being viewed, count the followers and follows.
     follows = len(profile.follows.all())
     followers = len(profile.followers.all())
 
-
     # pagination syntax taken from:
     # https://codeloop.org/django-pagination-complete-example/
+    paginated = Paginator(posts, 10)
     page = request.GET.get('page')
     try:
         posts = paginated.page(page)
@@ -146,7 +159,6 @@ def profile(request, username):
     except EmptyPage:
         posts = paginated.page(paginated.num_pages)
 
-    print_hello("network/profile.html")
     return render(request, "network/profile.html", {
             "username": username,
             "page": page,
@@ -158,6 +170,8 @@ def profile(request, username):
             })
 
 def follow(request, username):
+    # When the current user follows another user, a new 'Follow' object needs to be created in the database.
+
     # Create new follow.
     new_follow = Follow()
     new_follow.follower = request.user
@@ -166,28 +180,29 @@ def follow(request, username):
     return redirect(request.META["HTTP_REFERER"])
 
 def unfollow(request, username):
+    # When the current user choses to stop following another user, the 'Follow' object needs to be deleted from the database.
+
     # Delete a follow.
     request.user.follows.get(followed = User.objects.get(username=username)).delete()
     return redirect(request.META["HTTP_REFERER"])
 
 def following(request):
-    # Display posts of followed users
-
-    # Functoion to help with sorting posts, taken from:
-    # https://www.programiz.com/python-programming/methods/list/sort
-    def get_timestamp(post):
-        return(post.timestamp)
+    # Display all posts by users being followed by the current user
 
     posts = []
     for user in request.user.follows.all():
         for post in Post.objects.filter(user=user.followed):
             posts.append(post)
 
+    # To chronologically sort a list containing from multiple seperate database queries, a simple function is employed (get_timestamp).
     posts.sort(key=get_timestamp, reverse=True)
-    paginated = Paginator(posts, 10)
+
+    # Each post needs additional 'like' data loaded into it dynamically using the like_data_loader function.
+    like_data_loader(request, posts)
 
     # pagination syntax taken from:
     # https://codeloop.org/django-pagination-complete-example/
+    paginated = Paginator(posts, 10)
     page = request.GET.get('page')
     try:
         posts = paginated.page(page)
@@ -196,8 +211,6 @@ def following(request):
     except EmptyPage:
         posts = paginated.page(paginated.num_pages)
 
-    print_hello("network/following.html")
-
     return render(request, "network/following.html", {
         "following": len(request.user.follows.all()),
         "page": page,
@@ -205,34 +218,44 @@ def following(request):
     })
 
 def edit_post(request):
-    # Composing a new email must be via POST
+    # Reached via Fetch request, this function saves edited post data.
+
+    # Edit request must be via POST
     if request.method != "POST":
         return JsonResponse({"error": "POST request required."}, status=400)
 
+    # Parse data from POST request
     data = json.loads(request.body)
     post_body = data["post_body"]
     post_id = data["post_id"]
 
+    # Save data to database
     post = Post.objects.get(pk=post_id)
     post.body = post_body
     post.save()
 
+    # Send response to Fetch request containing newly saved post data.
     return JsonResponse({"message": "Email sent successfully.", "post_body": post_body}, status=201)
 
 def like_post(request):
+    # Reached via Fetch request, this allows a user to like a post by creating a 'Like' object in the database.
+    # It also allows a user to un-like a post by deleting 'Like' objects from the database.
+
+    # Like request must be via POST
     if request.method != "POST":
         return JsonResponse({"error": "POST request required."}, status=400)
 
+    # Parse data from POST request
     data = json.loads(request.body)
     post_id = data["post_id"]
 
-    # "exists()" technique sourced from:
-    # https://stackoverflow.com/questions/40910149/django-exists-versus-doesnotexist
-
+    # Look for a 'Like' object in the database between containing current user and the requested post.
     like_query = Like.objects.filter(post=Post.objects.get(pk=post_id), user=request.user)
 
+    # "exists()" technique sourced from:
+    # https://stackoverflow.com/questions/40910149/django-exists-versus-doesnotexist
     if like_query.exists():
-        # Delete LIKE
+        # Delete Like
         request.user.likes.get(post = Post.objects.get(pk=post_id)).delete()
         like_condition = False
         message = "Post Un-Liked"
@@ -246,12 +269,7 @@ def like_post(request):
         like_condition = True
         message = "Post Liked"
 
+    # Count the new total likes for the post, which will be automatically updated in HTML
     like_count = len(Post.objects.get(pk=post_id).likes.all())
+
     return JsonResponse({"message": message, "like_condition": like_condition, "like_count": like_count}, status=201)
-
-def print_hello(route):
-
-    print("hello!")
-    print(route)
-
-    return

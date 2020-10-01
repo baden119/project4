@@ -22,6 +22,9 @@ class Post(models.Model):
     #         "likes": self.likes
     #     }
 
+    def __str__(self):
+        return f" {self.user} - {self.body}"
+
 class Follow(models.Model):
 
     follower = models.ForeignKey("User", on_delete=models.CASCADE, related_name="follows")
