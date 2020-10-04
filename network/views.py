@@ -7,8 +7,6 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.views.decorators.csrf import csrf_exempt
-
 from .models import User, Post, Follow, Like
 
 class NewPostForm(forms.Form):
@@ -34,13 +32,7 @@ def get_timestamp(post):
     # https://www.programiz.com/python-programming/methods/list/sort
     return(post.timestamp)
 
-def index(request):
-    # Displays all posts
-    posts = Post.objects.all().order_by('-timestamp')
-
-    # Each post needs additional 'like' data loaded into it dynamically using the like_data_loader function.
-    like_data_loader(request, posts)
-
+def pagination_helper(request, posts):
     # pagination syntax taken from:
     # https://codeloop.org/django-pagination-complete-example/
     paginated = Paginator(posts, 10)
@@ -52,9 +44,26 @@ def index(request):
     except EmptyPage:
         posts = paginated.page(paginated.num_pages)
 
+    pagination_data = {
+        "posts": posts,
+        "page": page
+    }
+
+    return pagination_data
+
+def index(request):
+    # Displays all posts
+    posts = Post.objects.all().order_by('-timestamp')
+
+    # Each post needs additional 'like' data loaded into it dynamically using the like_data_loader function.
+    like_data_loader(request, posts)
+
+    # Display pages in a paginated fashion.
+    pagination_data = pagination_helper(request, posts)
+
     return render(request, "network/index.html", {
-            "posts": posts,
-            "page": page,
+            "posts": pagination_data["posts"],
+            "page": pagination_data["page"],
             "NewPostForm": NewPostForm()
             })
 
@@ -137,6 +146,9 @@ def profile(request, username):
     # Each post needs additional 'like' data loaded into it dynamically using the like_data_loader function.
     like_data_loader(request, posts)
 
+    # Display pages in a paginated fashion.
+    pagination_data = pagination_helper(request, posts)
+
     # Determine if current user is following of the profile being viewed
     following = False
     if request.user.is_authenticated:
@@ -148,21 +160,11 @@ def profile(request, username):
     follows = len(profile.follows.all())
     followers = len(profile.followers.all())
 
-    # pagination syntax taken from:
-    # https://codeloop.org/django-pagination-complete-example/
-    paginated = Paginator(posts, 10)
-    page = request.GET.get('page')
-    try:
-        posts = paginated.page(page)
-    except PageNotAnInteger:
-        posts = paginated.page(1)
-    except EmptyPage:
-        posts = paginated.page(paginated.num_pages)
 
     return render(request, "network/profile.html", {
             "username": username,
-            "page": page,
-            "posts": posts,
+            "posts": pagination_data["posts"],
+            "page": pagination_data["page"],
             "following": following,
             "follows": follows,
             "followers": followers,
@@ -200,21 +202,13 @@ def following(request):
     # Each post needs additional 'like' data loaded into it dynamically using the like_data_loader function.
     like_data_loader(request, posts)
 
-    # pagination syntax taken from:
-    # https://codeloop.org/django-pagination-complete-example/
-    paginated = Paginator(posts, 10)
-    page = request.GET.get('page')
-    try:
-        posts = paginated.page(page)
-    except PageNotAnInteger:
-        posts = paginated.page(1)
-    except EmptyPage:
-        posts = paginated.page(paginated.num_pages)
+    # Display pages in a paginated fashion.
+    pagination_data = pagination_helper(request, posts)
 
     return render(request, "network/following.html", {
         "following": len(request.user.follows.all()),
-        "page": page,
-        "posts": posts
+        "posts": pagination_data["posts"],
+        "page": pagination_data["page"]
     })
 
 def edit_post(request):

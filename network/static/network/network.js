@@ -20,8 +20,6 @@ document.addEventListener('DOMContentLoaded', function() {
      // Populate edit box with text of selected post
      let saved_text = document.querySelector(`#post_body_${this.name}`)
      edit_form_nodes = document.querySelector(`#edit_form_${this.name}`).childNodes;
-     console.log(document.querySelector(`#post_body_${this.name}`).innerHTML);
-     console.log(edit_form_nodes);
      edit_form_nodes[1].innerHTML = document.querySelector(`#post_body_${this.name}`).innerHTML;
 
      // When an edited post is submitted:
